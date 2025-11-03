@@ -1,11 +1,13 @@
 package org.example.Amazon;
 
+import org.example.Amazon.Cost.ItemType;
 import org.example.Amazon.Cost.PriceRule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,28 +20,39 @@ class AmazonUnitTest {
     private Amazon amazon;
 
     @BeforeEach
-    void setup() {
+    void setUp() {
         mockCart = mock(ShoppingCart.class);
         mockRule = mock(PriceRule.class);
 
-        // Return a dummy item list for the cart
-        when(mockCart.getItems()).thenReturn(List.of());
-
-        amazon = new Amazon(mockCart, List.of(mockRule));
+        amazon = new Amazon(mockCart, Collections.singletonList(mockRule));
     }
 
     @Test
     @DisplayName("specification-based")
-    void calculateShouldCallPriceRule() {
-        amazon.calculate();
-        verify(mockRule, times(1)).priceToAggregate(any());
+    void calculate_appliesPriceRuleCorrectly() {
+        // Mock the cart items
+        Item item = new Item(ItemType.OTHER, "Book A", 2, 10.0);
+        when(mockCart.getItems()).thenReturn(Collections.singletonList(item));
+
+        // Mock the price rule behavior
+        when(mockRule.priceToAggregate(Collections.singletonList(item))).thenReturn(20.0);
+
+        double total = amazon.calculate();
+
+        assertThat(total).isEqualTo(20.0);
+
+        // Verify that rule was called
+        verify(mockRule, times(1)).priceToAggregate(Collections.singletonList(item));
     }
 
     @Test
     @DisplayName("structural-based")
-    void addToCartShouldCallCartAdd() {
-        Item dummyItem = new Item(null, "Test", 1, 10.0);
-        amazon.addToCart(dummyItem);
-        verify(mockCart, times(1)).add(dummyItem);
+    void addToCart_callsShoppingCartAdd() {
+        Item item = new Item(ItemType.ELECTRONIC, "Headphones", 1, 50.0);
+
+        amazon.addToCart(item);
+
+        // Verify that the ShoppingCart add method was called
+        verify(mockCart, times(1)).add(item);
     }
 }
