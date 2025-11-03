@@ -1,4 +1,5 @@
 name: SE333_CI
+
 on:
   push:
     branches:
@@ -7,10 +8,13 @@ on:
 jobs:
   SE333_CI_JOB:
     runs-on: ubuntu-latest
+
     steps:
+      # Step 1: Checkout the repo
       - name: checkout-repo
         uses: actions/checkout@v4
 
+      # Step 2: Setup Java
       - name: setupJava
         uses: actions/setup-java@v4
         with:
@@ -18,17 +22,35 @@ jobs:
           distribution: 'temurin'
           architecture: x64
 
+      # Step 3: Install Linter (Checkstyle plugin is in pom.xml, so just mvn validate)
       - name: Install Linter
-        ##TODO
+        run: mvn validate
 
+      # Step 4: Run Checkstyle
       - name: Run Checkstyle
-        ##TODO
+        run: mvn checkstyle:checkstyle || true
+        # '|| true' prevents workflow failure on violations, per assignment instructions
 
+      # Step 5: Upload Checkstyle Result
       - name: Upload Checkstyle Result
-        ##TODO
+        uses: actions/upload-artifact@v3
+        with:
+          name: checkstyle-report
+          path: target/site/checkstyle.html
 
+      # Step 6: Run Maven Test
       - name: Run Maven Test
-        ##TODO
+        run: mvn test
 
+      # Step 7: Jacoco Report
       - name: Jacoco Report
-        ##TODO
+        run: |
+          mvn jacoco:report
+        continue-on-error: false
+
+      # Step 8: Upload Jacoco XML (optional, for artifact collection)
+      - name: Upload Jacoco XML
+        uses: actions/upload-artifact@v3
+        with:
+          name: jacoco-report
+          path: target/site/jacoco/jacoco.xml
